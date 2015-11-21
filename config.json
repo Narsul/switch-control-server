@@ -1,0 +1,32 @@
+{
+    "port"        : 3412,
+    "modbus"      : {
+        "host" : "10.0.1.100",
+        "port" : 502,
+        "switches"     : {
+            "bathroomCabinetLight" : { "active" : true,  "on" : 29, "off" : 30, "mask" : 2048 },
+            "bathroomLight"        : { "active" : true,  "on" : 27, "off" : 28, "mask" : 131072 },
+            "balconyLight"         : { "active" : true,  "on" : 8,  "off" : 17, "mask" : 32 },
+            "corridorCabinetLight" : { "active" : true,  "on" : 33, "off" : 34, "mask" : 8192 },
+            "corridorLight"        : { "active" : true,  "on" : 31, "off" : 32, "mask" : 4096 },
+            "floorBalcony"         : { "active" : true,  "on" : 1,  "off" : 2,  "mask" : 1 },
+            "floorKitchen"         : { "active" : true,  "on" : 3,  "off" : 12, "mask" : 2 },
+            "floorBathroom"        : { "active" : true,  "on" : 4,  "off" : 13, "mask" : 4 },
+            "kitchenCeilingLight"  : { "active" : true,  "on" : 23, "off" : 24, "mask" : 512 },
+            "ledCordBedroom"       : { "active" : true,  "on" : 10, "off" : 19, "mask" : 64 },
+            "ledCordCeiling"       : { "active" : true,  "on" : 11, "off" : 20, "mask" : 128 },
+            "ledCordKitchen"       : { "active" : true,  "on" : 25, "off" : 26, "mask" : 1024 },
+            "mainRoomLight"        : { "active" : true,  "on" : 9,  "off" : 18, "mask" : 65536 },
+            "reserved"             : { "active" : false, "on" : 35, "off" : 36, "mask" : 16384 },
+            "tableLight"           : { "active" : true,  "on" : 21, "off" : 22, "mask" : 256 },
+            "wallLampRightLight"   : { "active" : true,  "on" : 5,  "off" : 14, "mask" : 32768 },
+            "wallLampLeftLight"    : { "active" : true,  "on" : 6,  "off" : 15, "mask" : 8 },
+            "wallLampComputer"     : { "active" : true,  "on" : 7,  "off" : 16, "mask" : 16 }
+        },
+        "switchAllOff" : 37,
+        "delayBetweenSignals" : 1000
+    },
+    "modbusQueue" : {
+        "delay" : 500
+    }
+}

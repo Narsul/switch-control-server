@@ -1,0 +1,24 @@
+{
+  "author": {
+    "name": "Anthony Peklo",
+    "email": "developer@narsul.in.ua"
+  },
+  "name": "switch-control-server",
+  "dependencies": {
+    "express": "latest",
+    "method-override": "latest",
+    "modbus-stack": "Narsul/node-modbus-stack",
+    "morgan": "latest",
+    "nconf": "latest",
+    "node-mac": "^0.1.3",
+    "underscore": "latest",
+    "when": "latest",
+    "winston": "latest"
+  },
+  "description": "REST server for switch control via modbus",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Narsul/switch-control-server.git"
+  },
+  "private": true
+}
