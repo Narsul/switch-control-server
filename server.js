@@ -17,7 +17,7 @@
     app.get('/switches', function (req, res) {
         modbusQueue.getSwitchStates()
             .then(function(states){
-                log.debug(states);
+                log.info(states);
                 res.json(states);
             })
             .otherwise(function (error) {
@@ -28,8 +28,10 @@
 
     app.get('/switch-all-off', function (req, res) {
         modbusQueue.switchAllLightOff()
-            .then(function(state){
-                res.json(state);
+            .then(modbusQueue.getSwitchStates.bind(modbusQueue))
+            .then(function(states){
+                log.info(states);
+                res.json(states);
             })
             .otherwise(function (error) {
                 res.statusCode = 400;
@@ -39,8 +41,10 @@
 
     app.get('/switch', function (req, res) {
         modbusQueue.switchLight(req.query.name, req.query.state === 'on')
-            .then(function(state){
-                res.json(state);
+            .then(modbusQueue.getSwitchStates.bind(modbusQueue))
+            .then(function(states){
+                log.info(states);
+                res.json(states);
             })
             .otherwise(function (error) {
                 res.statusCode = 400;
