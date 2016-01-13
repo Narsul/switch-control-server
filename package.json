@@ -13,7 +13,8 @@
     "node-mac": "^0.1.3",
     "underscore": "latest",
     "when": "latest",
-    "winston": "latest"
+    "winston": "latest",
+    "underscore": "latest"
   },
   "description": "REST server for switch control via modbus",
   "repository": {
