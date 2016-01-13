@@ -79,8 +79,9 @@ app.get('/socket', function(req, res) {
   var state = req.query.state === 'on';
   socket.setState(state)
     .then(function(){
-      log.info(getSocketStates());
-      res.json({state: state});
+      var states = getSocketStates();
+      log.info(states);
+      res.json(states);
     })
     .catch(function(error) {
       res.statusCode = 500;
