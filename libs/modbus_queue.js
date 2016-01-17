@@ -1,9 +1,10 @@
 (function () {
     'use strict';
 
+    var when = require('when');
+
     var config = require('./config');
     var modbus = require('./modbus');
-    var when = require('when');
     var log = require('./log')(module);
 
     var modbusQueue = {

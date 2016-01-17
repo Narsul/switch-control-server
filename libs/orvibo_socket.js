@@ -12,11 +12,12 @@
  * then call setState for needed instance
  */
 
+var _ = require('underscore');
 var when = require('when'); // library for promises
 var udpInteraction = require('./udp_transport');
 var twenties = ['0x20', '0x20', '0x20', '0x20', '0x20', '0x20']; // this appears at the end of a few packets we send, so put it here for shortness of code
 
-var OrviboSocket = function(data){
+var OrviboSocket = function(data) {
   this._data = data;
 };
 
@@ -24,9 +25,9 @@ OrviboSocket.discover = function() {
   var result = {};
 
   return udpInteraction.activate()
-    .then(function(){
+    .then(function() {
       // listening to socket found event
-      udpInteraction.on('socket_found', function(socket){
+      udpInteraction.on('socket_found', function(socket) {
         if (!result[socket.macaddress]) {
           result[socket.macaddress] = new OrviboSocket(socket);
         }
@@ -37,33 +38,24 @@ OrviboSocket.discover = function() {
       var payload = ['0x68', '0x64', '0x00', '0x06', '0x71', '0x61'];
       return udpInteraction.sendMessage(payload, broadcastip);
     })
-    .then(function(){
+    .then(function() {
       // method will resolve after 2 seconds with all found sockets
       var defer = when.defer();
-      setTimeout(function(){
+      setTimeout(function() {
         defer.resolve(result);
         udpInteraction.removeAllListeners('socket_found');
       }, 2000);
       return defer.promise;
     })
-    .then(function(sockets){
+    .then(function(sockets) {
       // we need to subscribe to each socket
       // and get it's name
-      var subscribePromises = [];
-
-      for(var key in sockets) {
-        if (sockets.hasOwnProperty(key)) {
-          var socket = sockets[key];
-
-          subscribePromises.push(
-            socket.subscribe().then(socket.getName.bind(socket))
-          );
-        }
-      }
-
-      return when.all(subscribePromises).then(function(){
-        return sockets;
-      });
+      return when.map(sockets, function(socket, macAddress) {
+          return socket.subscribe().then(socket.getName.bind(socket));
+        })
+        .then(function() {
+          return sockets;
+        });
     });
 };
 
@@ -76,7 +68,7 @@ OrviboSocket.prototype.subscribe = function() {
   var payload = ['0x68', '0x64', '0x00', '0x1e', '0x63', '0x6c'].concat(hex2ba(this._data.macaddress), twenties, macReversed, twenties); // The subscription packet
   udpInteraction.sendMessage(payload, this._data.ipaddress);
 
-  return defer.promise.then(function(){
+  return defer.promise.then(function() {
     var defer = when.defer();
     udpInteraction.removeListener('socket_subscribed', handler);
     setTimeout(defer.resolve, 200);
@@ -97,7 +89,7 @@ OrviboSocket.prototype.getName = function() {
   var payload = ['0x68', '0x64', '0x00', '0x1d', '0x72', '0x74'].concat(hex2ba(this._data.macaddress), twenties, ['0x00', '0x00', '0x00', '0x00', '0x04', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00']);
   udpInteraction.sendMessage(payload, this._data.ipaddress);
 
-  return defer.promise.then(function(result){
+  return defer.promise.then(function(result) {
     var defer = when.defer();
     udpInteraction.removeListener('socket_name_received', handler);
     setTimeout(defer.resolve, 200);
@@ -105,8 +97,12 @@ OrviboSocket.prototype.getName = function() {
   });
 };
 
-OrviboSocket.prototype.getState = function() {
+OrviboSocket.prototype.state = function() {
   return this._data.state;
+};
+
+OrviboSocket.prototype.name = function() {
+  return this._data.name;
 };
 
 OrviboSocket.prototype.setState = function(state) {
@@ -118,14 +114,14 @@ OrviboSocket.prototype.setState = function(state) {
   var handler = this.socketStateChangedHandler.bind(this, defer);
   udpInteraction.on('socket_state_changed', handler);
 
-  // send request to set socket name
+  // send request to set socket state
   var controlByte = state ? '0x01' : '0x00';
   var payload = ['0x68', '0x64', '0x00', '0x17', '0x64', '0x63'].concat([], hex2ba(this._data.macaddress), twenties, ['0x00', '0x00', '0x00', '0x00'], [controlByte]);
   udpInteraction.sendMessage(payload, this._data.ipaddress);
 
-  return defer.promise.then(function(result){
+  return defer.promise.then(function(result) {
     var defer = when.defer();
-    setTimeout(function(){
+    setTimeout(function() {
       udpInteraction.removeListener('socket_state_changed', handler);
       defer.resolve();
     }, 200);
@@ -133,7 +129,7 @@ OrviboSocket.prototype.setState = function(state) {
   });
 };
 
-OrviboSocket.prototype.socketSubscribedHandler = function(defer, macAddress, state){
+OrviboSocket.prototype.socketSubscribedHandler = function(defer, macAddress, state) {
   // respond only to events for same macaddress
   if (macAddress === this._data.macaddress) {
     this._data.state = state;
@@ -142,7 +138,7 @@ OrviboSocket.prototype.socketSubscribedHandler = function(defer, macAddress, sta
   }
 };
 
-OrviboSocket.prototype.socketNameReceivedHandler = function(defer, macAddress, name){
+OrviboSocket.prototype.socketNameReceivedHandler = function(defer, macAddress, name) {
   // respond only to events for same macaddress
   if (macAddress === this._data.macaddress) {
     this._data.name = name;
@@ -150,7 +146,7 @@ OrviboSocket.prototype.socketNameReceivedHandler = function(defer, macAddress, n
   }
 };
 
-OrviboSocket.prototype.socketStateChangedHandler = function(defer, macAddress, state){
+OrviboSocket.prototype.socketStateChangedHandler = function(defer, macAddress, state) {
   // respond only to events for same macaddress
   if (macAddress === this._data.macaddress) {
     this._data.state = state;
@@ -158,7 +154,7 @@ OrviboSocket.prototype.socketStateChangedHandler = function(defer, macAddress, s
   }
 };
 
-OrviboSocket .prototype.getReverseMacAddress = function() {
+OrviboSocket.prototype.getReverseMacAddress = function() {
   var macReversed = hex2ba(this._data.macaddress); // Convert our MAC address into a byte array (e.g. [0x12, 0x23] etc.)
   return macReversed.slice().reverse(); // And reverse the individual sections (e.g. ACCF becomes CFAC etc.)
 }
