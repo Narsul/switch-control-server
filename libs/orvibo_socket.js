@@ -13,7 +13,9 @@
  */
 
 var _ = require('underscore');
+var parallel = require('when/parallel');
 var when = require('when'); // library for promises
+
 var udpInteraction = require('./udp_transport');
 var twenties = ['0x20', '0x20', '0x20', '0x20', '0x20', '0x20']; // this appears at the end of a few packets we send, so put it here for shortness of code
 
@@ -50,12 +52,23 @@ OrviboSocket.discover = function() {
     .then(function(sockets) {
       // we need to subscribe to each socket
       // and get it's name
-      return when.map(sockets, function(socket, macAddress) {
-          return socket.subscribe().then(socket.getName.bind(socket));
-        })
-        .then(function() {
-          return sockets;
-        });
+      var jobs = _.map(sockets, function(socket, macAddress) {
+        return (function(socket) {
+          return function() {
+            return socket.subscribe()
+            .then(socket.getName.bind(socket))
+            .then(function(){
+              // subscribing to external changes of socket state
+              var handler = socket.socketStateChangedHandler.bind(socket, null);
+              udpInteraction.on('socket_state_changed', handler);
+            });
+          }
+        })(socket);
+      });
+
+      return parallel(jobs).then(function() {
+        return sockets;
+      });
     });
 };
 
@@ -150,7 +163,9 @@ OrviboSocket.prototype.socketStateChangedHandler = function(defer, macAddress, s
   // respond only to events for same macaddress
   if (macAddress === this._data.macaddress) {
     this._data.state = state;
-    defer.resolve();
+    if (defer) {
+      defer.resolve();
+    }
   }
 };
 
