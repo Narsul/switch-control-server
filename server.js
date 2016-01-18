@@ -5,6 +5,7 @@ var express = require('express');
 var methodOverride = require('method-override');
 var morgan = require('morgan');
 var path = require('path'); // module for path parsing
+var timeout = require('connect-timeout');
 
 var config = require('./libs/config');
 var modbusQueue = require('./libs/modbus_queue');
@@ -12,6 +13,7 @@ var OrviboSocket = require('./libs/orvibo_socket');
 var log = require('./libs/log')(module);
 var app = express();
 
+app.use(timeout('10s'));
 app.use(morgan('combined'));
 app.use(methodOverride('X-HTTP-Method-Override'));
 app.use(function(err, req, res, next) {

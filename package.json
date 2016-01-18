@@ -5,6 +5,7 @@
   },
   "name": "switch-control-server",
   "dependencies": {
+    "connect-timeout": "^1.7.0",
     "express": "latest",
     "method-override": "latest",
     "modbus-stack": "Narsul/node-modbus-stack",
