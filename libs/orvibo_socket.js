@@ -61,6 +61,11 @@ OrviboSocket.discover = function() {
               // subscribing to external changes of socket state
               var handler = socket.socketStateChangedHandler.bind(socket, null);
               udpInteraction.on('socket_state_changed', handler);
+
+              // subscribing to socket every 5 minutes
+              setInterval(function(){
+                socket.subscribe().then(socket.getName.bind(socket));
+              }, 1000 * 60 * 5);
             });
           }
         })(socket);
