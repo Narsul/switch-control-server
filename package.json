@@ -7,8 +7,8 @@
   "dependencies": {
     "connect-timeout": "^1.7.0",
     "express": "latest",
+    "jsmodbus": "^0.5.0",
     "method-override": "latest",
-    "modbus-stack": "Narsul/node-modbus-stack",
     "morgan": "latest",
     "nconf": "latest",
     "node-mac": "^0.1.3",

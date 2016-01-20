@@ -8,7 +8,7 @@ var path = require('path'); // module for path parsing
 var timeout = require('connect-timeout');
 
 var config = require('./libs/config');
-var modbusQueue = require('./libs/modbus_queue');
+var ModbusSwitch = require('./libs/modbus_switch');
 var OrviboSocket = require('./libs/orvibo_socket');
 var log = require('./libs/log')(module);
 var app = express();
@@ -32,11 +32,11 @@ app.get('/description', function(req, res) {
 });
 
 app.get('/devices', function(req, res) {
-  modbusQueue.getSwitchStates()
-    .then(function(switchStates) {
+  ModbusSwitch.updateStates(switches)
+    .then(function(switches) {
       res.json({
         method: 'devices',
-        devices: getDevices(switchStates)
+        devices: getDevices(switches)
       });
     })
     .catch(function(error) {
@@ -48,40 +48,50 @@ app.get('/devices', function(req, res) {
 });
 
 app.get('/switch/:id', function(req, res) {
-  modbusQueue.getSwitchStates()
-    .then(function(switchStates) {
-      var switchObj = switchStates[req.params.id];
-      res.json({
-        method: 'switch',
-        switch: {
-          id: req.params.id,
-          name: switchObj.label,
-          state: Boolean(switchObj.state)
-        }
-      });
-    })
-    .catch(function(error) {
-      res.statusCode = 500;
-      res.json({
-        error: error.message
-      });
+  var id = req.params.id;
+  var switchObj = switches[id];
+
+  if (!switchObj) {
+    res.statusCode = 400;
+    res.json({
+      error: 'Switch with id ' + id + ' not found'
     });
+    return;
+  }
+
+  res.json({
+    method: 'switch',
+    switch: {
+      id: id,
+      name: switchObj.name(),
+      state: Boolean(switchObj.state())
+    }
+  });
 });
 
 app.put('/switch/:id/:state', function(req, res) {
+  var id = req.params.id;
   var newState = req.params.state === 'on';
-  modbusQueue.switchLight(req.params.id, newState)
-    .then(modbusQueue.getSwitchStates.bind(modbusQueue))
-    .then(function(switchStates) {
-      var switchObj = switchStates[req.params.id];
+  var switchObj = switches[id];
+
+  if (!switchObj) {
+    res.statusCode = 400;
+    res.json({
+      error: 'Switch with id ' + id + ' not found'
+    });
+    return;
+  }
+
+  switchObj.setState(newState)
+    .then(function() {
       res.json({
         method: 'switch',
         switch: {
-          id: req.params.id,
-          name: switchObj.label,
-          state: Boolean(switchObj.state)
+          id: id,
+          name: switchObj.name(),
+          state: Boolean(switchObj.state())
         }
-      });
+      })
     })
     .catch(function(error) {
       res.statusCode = 500;
@@ -145,7 +155,9 @@ app.put('/socket/:id/:state', function(req, res) {
     });
 });
 
+var switches = ModbusSwitch.init(config.get('modbus:switches'));
 var sockets = {};
+
 OrviboSocket.discover().then(function(foundSockets) {
   sockets = foundSockets;
   log.info('Found ' + _.keys(sockets).length + ' sockets');
@@ -157,20 +169,20 @@ OrviboSocket.discover().then(function(foundSockets) {
   require('./libs/discovery');
 });
 
-function getDevices(switchStates) {
+function getDevices(switches) {
   return {
-    sockets: _.mapObject(sockets, function(socket, macAddress) {
+    sockets: _.mapObject(sockets, function(socket, id) {
       return {
         name: socket.name(),
         state: socket.state(),
-        id: macAddress
+        id: id
       };
     }),
-    switches: _.mapObject(switchStates, function(switchObj, switchName) {
+    switches: _.mapObject(switches, function(switchObj, id) {
       return {
-        name: switchObj.label,
-        state: switchObj.state,
-        id: switchName
+        name: switchObj.name(),
+        state: switchObj.state(),
+        id: id
       };
     })
   };
