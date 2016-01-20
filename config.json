@@ -29,9 +29,6 @@
             {"id": "wallLampComputer",     "label": "Wall Lamp Computer Light", "active" : true,  "on" : 7,  "off" : 16, "index" : 4 }
         ],
         "switchAllOff" : 37,
-        "delayBetweenSignals" : 1000
-    },
-    "modbusQueue" : {
-        "delay" : 500
+        "delayBetweenSignals" : 100
     }
 }

@@ -50,6 +50,25 @@ ModbusSwitch.prototype.name = function() {
   return this._data.label;
 };
 
+ModbusSwitch.prototype.refreshState = function() {
+  return createModbusClient()
+    .then(function(client){
+      return when(client.readDiscreteInput(1, 19))
+        .then(function(resp){
+          client.close();
+
+          var states = _.isObject(resp) && _.isArray(resp.coils) ? resp.coils : [];
+          var state = states[this._data.index]
+
+          if (_.isBoolean(state)) {
+            this._state = state;
+          } else {
+            console.warn('No state available for switch: ' + this._data.id);
+          }
+        }.bind(this));
+    }.bind(this));
+}
+
 ModbusSwitch.prototype.setState = function(newState) {
   var addressType = newState ? 'on' : 'off';
   var address = this._data[addressType];

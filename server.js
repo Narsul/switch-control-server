@@ -59,14 +59,23 @@ app.get('/switch/:id', function(req, res) {
     return;
   }
 
-  res.json({
-    method: 'switch',
-    switch: {
-      id: id,
-      name: switchObj.name(),
-      state: Boolean(switchObj.state())
-    }
-  });
+  switchObj.refreshState()
+    .then(function(){
+      res.json({
+        method: 'switch',
+        switch: {
+          id: id,
+          name: switchObj.name(),
+          state: Boolean(switchObj.state())
+        }
+      });
+    })
+    .catch(function(error) {
+      res.statusCode = 500;
+      res.json({
+        error: error.message
+      });
+    });
 });
 
 app.put('/switch/:id/:state', function(req, res) {
