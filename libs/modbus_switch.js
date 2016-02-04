@@ -74,8 +74,13 @@ ModbusSwitch.prototype.setState = function(newState) {
   var address = this._data[addressType];
 
   return createModbusClient()
+    .then(waitNotMoreThan(400))
     .then(function(client){
-      return when(client.writeSingleCoil(address, true))
+      return when(client.writeSingleCoil(address, false))
+        .then(wait(config.get('modbus:delayBetweenSignals')))
+        .then(function(){
+          return when(client.writeSingleCoil(address, true));
+        })
         .then(wait(config.get('modbus:delayBetweenSignals')))
         .then(function(){
           return when(client.writeSingleCoil(address, false));
@@ -120,6 +125,17 @@ var wait = function(milliseconds) {
     setTimeout(function(){
       defer.resolve(result);
     }, milliseconds);
+    return defer.promise;
+  }
+};
+
+var waitNotMoreThan = function(milliseconds) {
+  var timeout = Math.round(Math.random() * milliseconds);
+  return function(result) {
+    var defer = when.defer();
+    setTimeout(function(){
+      defer.resolve(result);
+    }, timeout);
     return defer.promise;
   }
 };
