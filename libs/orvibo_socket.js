@@ -21,6 +21,7 @@ var twenties = ['0x20', '0x20', '0x20', '0x20', '0x20', '0x20']; // this appears
 
 var OrviboSocket = function(data) {
   this._data = data;
+  this._stateChangedExternal = null;
 };
 
 OrviboSocket.discover = function() {
@@ -59,8 +60,10 @@ OrviboSocket.discover = function() {
             .then(socket.getName.bind(socket))
             .then(function(){
               // subscribing to external changes of socket state
-              var handler = socket.socketStateChangedHandler.bind(socket, null);
-              udpInteraction.on('socket_state_changed', handler);
+              if (!socket._stateChangedExternal) {
+                socket._stateChangedExternal = socket.socketStateChangedHandler.bind(socket, null);
+                udpInteraction.on('socket_state_changed', socket._stateChangedExternal);
+              }
 
               // subscribing to socket every 5 minutes
               setInterval(function(){
