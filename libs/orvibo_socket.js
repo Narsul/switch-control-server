@@ -26,10 +26,12 @@ var OrviboSocket = function(data) {
 OrviboSocket.discover = function() {
   var result = {};
 
+  console.log('Starting to discover sockets...');
+
   return udpInteraction.activate()
-    .then(function() {
+    .then(() => {
       // listening to socket found event
-      udpInteraction.on('socket_found', function(socket) {
+      udpInteraction.on('socket_found', socket => {
         if (!result[socket.macaddress]) {
           result[socket.macaddress] = new OrviboSocket(socket);
         }
@@ -40,7 +42,7 @@ OrviboSocket.discover = function() {
       var payload = ['0x68', '0x64', '0x00', '0x06', '0x71', '0x61'];
       return udpInteraction.sendMessage(payload, broadcastip);
     })
-    .then(function() {
+    .then(() => {
       // method will resolve after 2 seconds with all found sockets
       var defer = when.defer();
       setTimeout(function() {
@@ -49,31 +51,26 @@ OrviboSocket.discover = function() {
       }, 2000);
       return defer.promise;
     })
-    .then(function(sockets) {
+    .then(sockets => {
       // we need to subscribe to each socket
       // and get it's name
-      var jobs = _.map(sockets, function(socket, macAddress) {
-        return (function(socket) {
-          return function() {
-            return socket.subscribe()
-            .then(socket.getName.bind(socket))
-            .then(function(){
+
+      var jobs = _.map(sockets, socket => () => socket.subscribe()
+            .then(() => socket.getName())
+            .then(() => {
               // subscribing to external changes of socket state
               var handler = socket.socketStateChangedHandler.bind(socket, null);
               udpInteraction.on('socket_state_changed', handler);
 
               // subscribing to socket every 5 minutes
-              setInterval(function(){
-                socket.subscribe().then(socket.getName.bind(socket));
+              setInterval(() => {
+                socket.subscribe()
+                  .then(() => socket.getName());
               }, 1000 * 60 * 5);
-            });
-          }
-        })(socket);
-      });
+            })
+          );
 
-      return parallel(jobs).then(function() {
-        return sockets;
-      });
+      return parallel(jobs).then(() => sockets);
     });
 };
 
@@ -96,7 +93,8 @@ OrviboSocket.prototype.subscribe = function() {
 
 OrviboSocket.prototype.getName = function() {
   if (!this._data.subscribed) {
-    return this.subscribe().then(this.getName.bind(this));
+    return this.subscribe()
+      .then(() => this.getName());
   }
 
   var defer = when.defer();
@@ -107,12 +105,17 @@ OrviboSocket.prototype.getName = function() {
   var payload = ['0x68', '0x64', '0x00', '0x1d', '0x72', '0x74'].concat(hex2ba(this._data.macaddress), twenties, ['0x00', '0x00', '0x00', '0x00', '0x04', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00']);
   udpInteraction.sendMessage(payload, this._data.ipaddress);
 
-  return defer.promise.then(function(result) {
-    var defer = when.defer();
-    udpInteraction.removeListener('socket_name_received', handler);
-    setTimeout(defer.resolve, 200);
-    return defer.promise;
-  });
+  return defer.promise
+    .then(result => {
+      var defer = when.defer();
+      udpInteraction.removeListener('socket_name_received', handler);
+      setTimeout(defer.resolve, 200);
+      return defer.promise;
+    })
+    .catch(error => {
+      console.error(error);
+      throw error;
+    });
 };
 
 OrviboSocket.prototype.state = function() {

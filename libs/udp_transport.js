@@ -72,6 +72,7 @@ UDPTransport.prototype._processReceivedMessage = function(message, remote) { // 
         this.emit('socket_found', socket); // Tell the world we've found a socket!
         break;
 
+      case '686400a87274': // We've queried the socket for the name, and we've got data coming back
       case '686400dc7274': // We've queried the socket for the name, and we've got data coming back
         var strName = messageHex.split('202020202020')[4]; // We want everything after the fourth 202020202020 which is where our name starts
         strName = strName.substr(0, 32).toString('hex'); // And we want the next 32 bytes, as this is how long our name is. When we get it, trim the whitespace off.
