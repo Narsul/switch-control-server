@@ -5,6 +5,7 @@
   },
   "name": "switch-control-server",
   "dependencies": {
+    "applescript": "^1.0.0",
     "connect-timeout": "^1.7.0",
     "express": "latest",
     "ip": "^1.1.4",

@@ -1,16 +1,20 @@
 'use strict';
 
 var _ = require('underscore');
+var applescript = require('applescript');
 var express = require('express');
 var methodOverride = require('method-override');
 var morgan = require('morgan');
 var path = require('path'); // module for path parsing
 var timeout = require('connect-timeout');
+var when = require('when');
+var whenNode = require('when/node');
 
 var config = require('./libs/config');
 var OrviboSocket = require('./libs/orvibo_socket');
 var log = require('./libs/log')(module);
 var app = express();
+var execScript = whenNode.lift(applescript.execString);
 
 app.use(timeout('10s'));
 app.use(morgan('combined'));
@@ -72,7 +76,12 @@ app.put('/socket/:id/:state', function(req, res) {
   }
 
   var newState = req.params.state === 'on';
-  socket.setState(newState)
+  var dndPromise = execScript(`ignoring application responses
+	tell application "System Events" to keystroke "d" using {command down, option down, control down}
+end ignoring`)
+  var setStatePromise = socket.setState(newState);
+
+  when.join(dndPromise, setStatePromise)
     .then(function() {
       res.json({
         method: 'socket',
